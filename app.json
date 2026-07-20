@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Framory",
+    "slug": "framory",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Framory needs camera access to capture your photographic memories.",
+        "NSPhotoLibraryUsageDescription": "Framory needs photo library access to let you collect images for your stamp gallery."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F7F4EF",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Framory needs photo library access to let you collect images for your stamp gallery.",
+          "cameraPermission": "Framory needs camera access to capture your photographic memories."
+        }
+      ]
+    ]
+  }
+}
