@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { ArrowLeft, UserCircle, Calendar, MapPin, BookOpen, Camera, Image as ImageIcon } from 'phosphor-react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -9,7 +9,7 @@ import { uploadImage } from '../utils/storage';
 // Initial placeholder image from Stitch designs
 const DEFAULT_PLACEHOLDER = 'https://lh3.googleusercontent.com/aida-public/AB6AXuANHWjWrsj1v1YEsWqqspfK9g_bXcEGsTUcXEeyMZBaMCx6gZidyhxbuA5sH76aufAV6C_nJgFeoweFCl0qYJQLn8TT634GY--eH1mGk_3aXg4Cx_pAF_kQF-JNsfzMpUSNflUqppoCrG9Ucwz38g-t6aE4NLH4V2sj8WLTfhMj5d43ZfN3_fkZPbxAFgbRgD3vRPjuwBIXb_jOAUpkm9Yu_AWbtqLj_r_V3x_ope3i6WxXKAT2Tig1jGZWN9Qk7qLvAg';
 
-export default function CreateScreen({ onNavigate, onAddMemory }) {
+export default function CreateScreen({ onNavigate, onAddMemory, params }) {
   const [image, setImage] = useState(DEFAULT_PLACEHOLDER);
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('Golden Valley');
@@ -21,6 +21,13 @@ export default function CreateScreen({ onNavigate, onAddMemory }) {
   const [story, setStory] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Handle image returned from custom CameraScreen
+  useEffect(() => {
+    if (params && params.capturedImage) {
+      setImage(params.capturedImage);
+    }
+  }, [params]);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -41,22 +48,8 @@ export default function CreateScreen({ onNavigate, onAddMemory }) {
     }
   };
 
-  const takePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'We need camera permission to take photos!');
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [4, 5],
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      setImage(result.assets[0].uri);
-    }
+  const takePhoto = () => {
+    onNavigate('CAMERA');
   };
 
   const handleSave = async () => {

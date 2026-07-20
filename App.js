@@ -12,6 +12,7 @@ import { tw } from './components/Theme';
 import GalleryScreen from './screens/GalleryScreen';
 import DetailScreen from './screens/DetailScreen';
 import CreateScreen from './screens/CreateScreen';
+import CameraScreen from './screens/CameraScreen';
 
 const MEMORY_STORAGE_KEY = '@framory/memories';
 
@@ -115,7 +116,9 @@ export default function App() {
       case 'DETAIL':
         return <DetailScreen onNavigate={navigate} params={screenParams} onDeleteMemory={handleDeleteMemory} />;
       case 'CREATE':
-        return <CreateScreen onNavigate={navigate} onAddMemory={handleAddMemory} />;
+        return <CreateScreen onNavigate={navigate} onAddMemory={handleAddMemory} params={screenParams} />;
+      case 'CAMERA':
+        return <CameraScreen onNavigate={navigate} params={screenParams} memories={memories} />;
       default:
         return <GalleryScreen onNavigate={navigate} memories={memories} />;
     }
