@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, SafeAreaView, TouchableOpacity, Text, Alert } from 'react-native';
+import { View, ActivityIndicator, SafeAreaView, Text, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
@@ -7,8 +7,10 @@ import { Poppins_700Bold } from '@expo-google-fonts/poppins';
 import { Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
 import { PlayfairDisplay_700Bold_Italic } from '@expo-google-fonts/playfair-display';
 import { SquaresFour, Camera, Gear } from 'phosphor-react-native';
+import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 
 import { tw } from './components/Theme';
+import PressableScale from './components/PressableScale';
 import GalleryScreen from './screens/GalleryScreen';
 import DetailScreen from './screens/DetailScreen';
 import CreateScreen from './screens/CreateScreen';
@@ -128,9 +130,17 @@ export default function App() {
     <SafeAreaView style={tw`flex-1 bg-background`}>
       <StatusBar style="dark" />
 
-      <View style={tw`flex-1`}>
+      <Animated.View
+        key={currentScreen}
+        entering={
+          currentScreen === 'DETAIL' && screenParams?.heroRect
+            ? FadeIn.duration(220)
+            : FadeInUp.duration(260)
+        }
+        style={tw`flex-1`}
+      >
         {renderScreen()}
-      </View>
+      </Animated.View>
 
       <View style={[
         tw`absolute bottom-0 left-0 w-full flex-row justify-around items-center bg-glass-white/90 border-t border-cream-dark pb-6 pt-3 px-4`,
@@ -142,7 +152,8 @@ export default function App() {
           elevation: 2,
         }
       ]}>
-        <TouchableOpacity
+        <PressableScale
+          scaleTo={0.88}
           onPress={() => navigate('GALLERY')}
           style={tw`items-center justify-center py-1 flex-1`}
         >
@@ -162,9 +173,10 @@ export default function App() {
           ]}>
             Gallery
           </Text>
-        </TouchableOpacity>
+        </PressableScale>
 
-        <TouchableOpacity
+        <PressableScale
+          scaleTo={0.88}
           onPress={() => navigate('CREATE')}
           style={tw`items-center justify-center py-1 flex-1`}
         >
@@ -184,9 +196,10 @@ export default function App() {
           ]}>
             Collect
           </Text>
-        </TouchableOpacity>
+        </PressableScale>
 
-        <TouchableOpacity
+        <PressableScale
+          scaleTo={0.88}
           onPress={() => Alert.alert('Coming Soon', 'Settings features are coming soon!')}
           style={tw`items-center justify-center py-1 flex-1`}
         >
@@ -206,7 +219,7 @@ export default function App() {
           ]}>
             Settings
           </Text>
-        </TouchableOpacity>
+        </PressableScale>
       </View>
     </SafeAreaView>
   );

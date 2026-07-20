@@ -1,8 +1,17 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, Text, TextInput, Dimensions } from 'react-native';
+import Animated, {
+  FadeInUp,
+  LinearTransition,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { List, UserCircle, MagnifyingGlass, Camera } from 'phosphor-react-native';
 import { tw } from '../components/Theme';
 import StampWrapper from '../components/StampWrapper';
+import PressableScale from '../components/PressableScale';
 
 // Mock memories data based on Google Stitch screen content
 const MOCK_MEMORIES = [
@@ -79,6 +88,11 @@ const CATEGORIES = ['All Prints', 'Travel', 'Portraits', 'Events', 'Vintage'];
 export default function GalleryScreen({ onNavigate, memories = MOCK_MEMORIES }) {
   const [selectedCategory, setSelectedCategory] = useState('All Prints');
   const [searchQuery, setSearchQuery] = useState('');
+  const stampRefs = useRef({});
+  const [headerMeasured, setHeaderMeasured] = useState(false);
+  const headerHeight = useSharedValue(0);
+  const headerHidden = useSharedValue(0);
+  const lastScrollY = useSharedValue(0);
 
   // Filter logic
   const filteredMemories = memories.filter((item) => {
@@ -98,24 +112,67 @@ export default function GalleryScreen({ onNavigate, memories = MOCK_MEMORIES }) 
   const stampWidth = (screenWidth - marginSize * 2 - gapSize * 2) / 3;
   const stampHeight = stampWidth * 1.33; // 3:4 aspect ratio
 
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      const y = event.contentOffset.y;
+      const dy = y - lastScrollY.value;
+      lastScrollY.value = y;
+      if (y <= 24) {
+        headerHidden.value = withTiming(0, { duration: 200 });
+      } else if (dy > 6) {
+        headerHidden.value = withTiming(1, { duration: 220 });
+      } else if (dy < -6) {
+        headerHidden.value = withTiming(0, { duration: 220 });
+      }
+    },
+  });
+
+  const headerHeightStyle = useAnimatedStyle(() => ({
+    height: headerHeight.value * (1 - headerHidden.value),
+  }));
+
+  const headerFadeStyle = useAnimatedStyle(() => ({
+    opacity: 1 - headerHidden.value,
+  }));
+
+  const handleStampPress = (item) => {
+    const node = stampRefs.current[item.id];
+    if (node && node.measureInWindow) {
+      node.measureInWindow((x, y, width, height) => {
+        onNavigate('DETAIL', { memory: item, heroRect: { x, y, width, height } });
+      });
+    } else {
+      onNavigate('DETAIL', { memory: item });
+    }
+  };
+
   return (
     <View style={tw`flex-1 bg-background`}>
       {/* TopAppBar */}
       <View style={[tw`flex-row justify-between items-center px-5 pt-12 pb-4 border-b border-cream-dark`, { height: 96 }]}>
-        <TouchableOpacity style={tw`active:scale-95`}>
+        <PressableScale scaleTo={0.9} style={tw`p-1`}>
           <List size={24} color="#1F1F1F" />
-        </TouchableOpacity>
+        </PressableScale>
         <Text style={[tw`text-xl text-primary tracking-tight font-poppins`, { fontFamily: 'Poppins-Bold' }]}>
           Framory
         </Text>
-        <TouchableOpacity style={tw`active:scale-95`}>
+        <PressableScale scaleTo={0.9} style={tw`p-1`}>
           <UserCircle size={24} color="#1F1F1F" />
-        </TouchableOpacity>
+        </PressableScale>
       </View>
 
-      <ScrollView contentContainerStyle={tw`pb-28`} showsVerticalScrollIndicator={false}>
-        {/* Search & Filter Area */}
-        <View style={tw`px-5 pt-6`}>
+      {/* Collapsing Search & Filter header (hides on scroll down) */}
+      <Animated.View style={[{ overflow: 'hidden' }, headerMeasured && headerHeightStyle, headerFadeStyle]}>
+        <View
+          onLayout={(e) => {
+            const h = e.nativeEvent.layout.height;
+            if (h > 0 && headerHeight.value !== h) {
+              headerHeight.value = h;
+              setHeaderMeasured(true);
+            }
+          }}
+          style={tw`px-5 pt-6`}
+        >
           {/* Search bar */}
           <View style={tw`flex-row items-center bg-cream-dark px-4 py-3 rounded-xl mb-4`}>
             <MagnifyingGlass size={20} color="#747878" style={tw`mr-3`} />
@@ -129,12 +186,13 @@ export default function GalleryScreen({ onNavigate, memories = MOCK_MEMORIES }) 
           </View>
 
           {/* Horizontal Filter Tags */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={tw`flex-row mb-6`}>
+          <Animated.ScrollView horizontal showsHorizontalScrollIndicator={false} style={tw`flex-row mb-6`}>
             {CATEGORIES.map((cat) => {
               const isSelected = selectedCategory === cat;
               return (
-                <TouchableOpacity
+                <PressableScale
                   key={cat}
+                  scaleTo={0.92}
                   onPress={() => setSelectedCategory(cat)}
                   style={tw`mr-3 px-5 py-2.5 rounded-full ${
                     isSelected ? 'bg-primary' : 'bg-cream-dark'
@@ -148,24 +206,31 @@ export default function GalleryScreen({ onNavigate, memories = MOCK_MEMORIES }) 
                   >
                     {cat}
                   </Text>
-                </TouchableOpacity>
+                </PressableScale>
               );
             })}
-          </ScrollView>
+          </Animated.ScrollView>
         </View>
+      </Animated.View>
 
+      <Animated.ScrollView
+        contentContainerStyle={tw`pb-28`}
+        showsVerticalScrollIndicator={false}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+      >
         {/* Postage Stamp Grid */}
-        <View style={tw`px-5 flex-row flex-wrap justify-start`}>
+        <View style={tw`px-5 pt-6 flex-row flex-wrap justify-start`}>
           {filteredMemories.map((item, index) => {
             // Calculate column adjustments to create simple 3-column rows
             const isRowStart = index % 3 === 0;
-            const isRowEnd = index % 3 === 2;
             return (
-              <TouchableOpacity
+              <Animated.View
                 key={item.id}
-                onPress={() => onNavigate('DETAIL', { memory: item })}
+                entering={FadeInUp.delay(Math.min(index, 12) * 45).springify().damping(18).stiffness(170)}
+                layout={LinearTransition.springify().damping(20).stiffness(170)}
                 style={[
-                  tw`mb-4 active:scale-98`,
+                  tw`mb-4`,
                   {
                     width: stampWidth,
                     height: stampHeight,
@@ -173,8 +238,17 @@ export default function GalleryScreen({ onNavigate, memories = MOCK_MEMORIES }) 
                   },
                 ]}
               >
-                <StampWrapper source={item.image} width={stampWidth} height={stampHeight} />
-              </TouchableOpacity>
+                <PressableScale
+                  ref={(node) => {
+                    stampRefs.current[item.id] = node;
+                  }}
+                  scaleTo={0.96}
+                  onPress={() => handleStampPress(item)}
+                  style={tw`flex-1`}
+                >
+                  <StampWrapper source={item.image} width={stampWidth} height={stampHeight} />
+                </PressableScale>
+              </Animated.View>
             );
           })}
         </View>
@@ -185,13 +259,14 @@ export default function GalleryScreen({ onNavigate, memories = MOCK_MEMORIES }) 
             {filteredMemories.length} memories collected
           </Text>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* Floating Action Button */}
-      <TouchableOpacity
+      <PressableScale
+        scaleTo={0.88}
         onPress={() => onNavigate('CREATE')}
         style={[
-          tw`absolute right-6 bottom-24 w-14 h-14 bg-primary rounded-full items-center justify-center shadow-lg active:scale-95`,
+          tw`absolute right-6 bottom-24 w-14 h-14 bg-primary rounded-full items-center justify-center shadow-lg`,
           {
             shadowColor: '#1F1F1F',
             shadowOffset: { width: 0, height: 6 },
@@ -202,7 +277,7 @@ export default function GalleryScreen({ onNavigate, memories = MOCK_MEMORIES }) 
         ]}
       >
         <Camera size={28} color="#F7F4EF" weight="bold" />
-      </TouchableOpacity>
+      </PressableScale>
     </View>
   );
 }

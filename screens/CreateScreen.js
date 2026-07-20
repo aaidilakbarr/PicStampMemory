@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 import { ArrowLeft, UserCircle, Calendar, MapPin, BookOpen, Camera, Image as ImageIcon } from 'phosphor-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { tw } from '../components/Theme';
 import StampWrapper from '../components/StampWrapper';
+import PressableScale from '../components/PressableScale';
 import { uploadImage } from '../utils/storage';
 
 // Initial placeholder image from Stitch designs
@@ -98,42 +100,44 @@ export default function CreateScreen({ onNavigate, onAddMemory, params }) {
       {/* TopAppBar */}
       <View style={[tw`flex-row justify-between items-center px-5 pt-12 pb-4 border-b border-cream-dark`, { height: 96 }]}>
         <View style={tw`flex-row items-center`}>
-          <TouchableOpacity onPress={() => onNavigate('GALLERY')} style={tw`active:scale-95 mr-4`}>
+          <PressableScale scaleTo={0.9} onPress={() => onNavigate('GALLERY')} style={tw`mr-4 p-1`}>
             <ArrowLeft size={24} color="#1F1F1F" />
-          </TouchableOpacity>
+          </PressableScale>
           <Text style={[tw`text-xl text-primary tracking-tight font-poppins`, { fontFamily: 'Poppins-Bold' }]}>
             Framory
           </Text>
         </View>
-        <TouchableOpacity style={tw`active:scale-95`}>
+        <PressableScale scaleTo={0.9} style={tw`p-1`}>
           <UserCircle size={24} color="#1F1F1F" />
-        </TouchableOpacity>
+        </PressableScale>
       </View>
 
       <ScrollView contentContainerStyle={tw`pb-28 px-5`} showsVerticalScrollIndicator={false}>
         {/* Stamp Image Section */}
         <View style={tw`items-center mt-8`}>
-          <View style={tw`active:scale-98`}>
+          <Animated.View key={image} entering={ZoomIn.springify().damping(16).stiffness(180)}>
             <StampWrapper source={image} width={220} height={275} />
-          </View>
+          </Animated.View>
 
           {/* Quick Actions for Image */}
           <View style={tw`flex-row gap-4 mt-6 w-full max-w-[280px]`}>
-            <TouchableOpacity
+            <PressableScale
+              scaleTo={0.94}
               onPress={takePhoto}
-              style={tw`flex-1 flex-row items-center justify-center gap-2 py-3 border border-primary rounded-xl active:scale-95`}
+              style={tw`flex-1 flex-row items-center justify-center gap-2 py-3 border border-primary rounded-xl`}
             >
               <Camera size={18} color="#1F1F1F" />
               <Text style={[tw`text-primary text-sm`, { fontFamily: 'Inter-Medium' }]}>Camera</Text>
-            </TouchableOpacity>
+            </PressableScale>
 
-            <TouchableOpacity
+            <PressableScale
+              scaleTo={0.94}
               onPress={pickImage}
-              style={tw`flex-1 flex-row items-center justify-center gap-2 py-3 border border-primary rounded-xl active:scale-95`}
+              style={tw`flex-1 flex-row items-center justify-center gap-2 py-3 border border-primary rounded-xl`}
             >
               <ImageIcon size={18} color="#1F1F1F" />
               <Text style={[tw`text-primary text-sm`, { fontFamily: 'Inter-Medium' }]}>Gallery</Text>
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         </View>
 
@@ -221,11 +225,12 @@ export default function CreateScreen({ onNavigate, onAddMemory, params }) {
 
         {/* Save Action */}
         <View style={tw`mt-8`}>
-          <TouchableOpacity
+          <PressableScale
+            scaleTo={0.96}
             onPress={handleSave}
             disabled={isUploading}
             style={[
-              tw`w-full flex-row items-center justify-center gap-3 py-4 bg-primary rounded-xl active:scale-98`,
+              tw`w-full flex-row items-center justify-center gap-3 py-4 bg-primary rounded-xl`,
               isUploading && { opacity: 0.6 },
             ]}
           >
@@ -239,7 +244,7 @@ export default function CreateScreen({ onNavigate, onAddMemory, params }) {
                 </Text>
               </>
             )}
-          </TouchableOpacity>
+          </PressableScale>
           <Text style={[tw`text-center mt-3 text-xs text-on-surface-variant opacity-60`, { fontFamily: 'Inter-Regular' }]}>
             {isUploading ? 'Uploading image to cloud storage...' : 'This will be added to your \'Autumn 2023\' collection'}
           </Text>
